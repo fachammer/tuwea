@@ -46,6 +46,30 @@ fun main(args: Array<String>) {
 
 private fun processFile(file: File, configuration: Configuration) {
     configuration.apply {
+        val (exercises, entries) = parseCsvFile(file, this)
+        val chosenAssignments = assignExercises(exercises, entries)
+        println(chosenAssignments.joinToString("\n") {
+            "${it.first}: ${it.second.firstName} ${it.second.lastName}"
+        })
+    }
+}
+
+private fun assignExercises(
+    exercises: List<String>,
+    entries: List<CheckmarksEntry>
+): List<Pair<String, CheckmarksEntry>> {
+    return exercises
+        .sortedBy { exercise -> entries.count { it.checkmarks.contains(exercise) } }
+        .fold(emptyList()) { chosenAssignments, exercise ->
+            val potentialEntries = entries
+                .filter { it.checkmarks.contains(exercise) }
+                .filterNot { entry -> chosenAssignments.firstOrNull { it.second == entry } != null }
+            chosenAssignments + Pair(exercise, potentialEntries[Random.nextInt(potentialEntries.size)])
+        }
+}
+
+private fun parseCsvFile(file: File, configuration: Configuration): Pair<List<String>, List<CheckmarksEntry>> {
+    configuration.apply {
         val csvLines = file.readLines().drop(csvLineOffset)
         val headerRow = csvLines.first()
         val reader = csvReader { delimiter = csvDelimiter }
@@ -75,22 +99,10 @@ private fun processFile(file: File, configuration: Configuration) {
                     checkmarks = checkmarks
                 )
             }
-
-        val chosenAssignments = exercises.sortedBy { exercise ->
-            entries.count { it.checkmarks.contains(exercise) }
-        }
-            .fold(emptyList<Pair<String, CheckmarksEntry>>()) { chosenAssignments, exercise ->
-                val potentialEntries = entries
-                    .filter { it.checkmarks.contains(exercise) }
-                    .filterNot { entry -> chosenAssignments.firstOrNull { it.second == entry } != null }
-                chosenAssignments + Pair(exercise, potentialEntries[Random.nextInt(potentialEntries.size)])
-            }
-
-        println(chosenAssignments.joinToString("\n") {
-            "${it.first}: ${it.second.firstName} ${it.second.lastName}"
-        })
+        return Pair(exercises, entries)
     }
 }
 
-private fun sanitizeExerciseName(exerciseName: String): String = exerciseName.trim().split(" ").first()
-private fun sanitizeFirstName(firstName: String): String = firstName.trim().split(" ").first()
+private fun sanitizeExerciseName(exerciseName: String): String = firstWordOf(exerciseName)
+private fun sanitizeFirstName(firstName: String): String = firstWordOf(firstName)
+private fun firstWordOf(string: String) = string.trim().split(" ").first()
