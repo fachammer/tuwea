@@ -4,8 +4,12 @@ import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
 import java.io.File
 import kotlin.random.Random
 
-data class CheckmarksEntry(val firstName: String, val lastName: String, val idNumber: String, val checkmarks: Set<String>)
-
+data class StudentCheckmarksEntry(
+    val firstName: String,
+    val lastName: String,
+    val idNumber: String,
+    val checkmarks: Set<String>
+)
 
 data class ParseConfiguration(
     val csvDelimiter: Char,
@@ -17,6 +21,9 @@ data class ParseConfiguration(
     val exerciseEndSignifierKey: String,
     val checkmarkSignifiers: Set<String>
 )
+
+data class ParseResult(val exercises: List<String>, val studentCheckmarksEntries: List<StudentCheckmarksEntry>)
+typealias ExerciseStudentAssignment = List<Pair<String, StudentCheckmarksEntry>>
 
 fun main(args: Array<String>) {
     val fileName = args.firstOrNull()
@@ -45,17 +52,16 @@ fun main(args: Array<String>) {
 }
 
 private fun processFile(file: File, parseConfiguration: ParseConfiguration) {
-    val (exercises, entries) = parseCsvFile(file, parseConfiguration)
-    val chosenAssignments = assignExercises(exercises, entries)
-    println(chosenAssignments.joinToString("\n") {
+    val parseResult = parseCsvFile(file, parseConfiguration)
+    val exerciseStudentAssignment = findExerciseAssignment(parseResult)
+    println(exerciseStudentAssignment.joinToString("\n") {
         "${it.first}: ${it.second.firstName} ${it.second.lastName}"
     })
 }
 
-private fun assignExercises(
-    exercises: List<String>,
-    entries: List<CheckmarksEntry>
-): List<Pair<String, CheckmarksEntry>> {
+private fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAssignment {
+    val exercises = parseResult.exercises
+    val entries = parseResult.studentCheckmarksEntries
     return exercises
         .sortedBy { exercise -> entries.count { it.checkmarks.contains(exercise) } }
         .fold(emptyList()) { chosenAssignments, exercise ->
@@ -69,7 +75,7 @@ private fun assignExercises(
 private fun parseCsvFile(
     file: File,
     parseConfiguration: ParseConfiguration
-): Pair<List<String>, List<CheckmarksEntry>> {
+): ParseResult {
     parseConfiguration.apply {
         val csvLines = file.readLines().drop(csvLineOffset)
         val headerRow = csvLines.first()
@@ -83,25 +89,23 @@ private fun parseCsvFile(
 
         val entries = reader
             .readAllWithHeader(csvLines.joinToString("\n"))
-            .mapIndexed { index, entry ->
-                if (!entry.keys.containsAll(setOf(firstNameKey, lastNameKey, idNumberKey))) {
-                    throw Exception("row $index is not formatted correctly: ${csvLines[index]}")
-                }
-
-                val checkmarks = entry.keys
-                    .filterNot { it in setOf(firstNameKey, lastNameKey, idNumberKey) }
-                    .filter { entry[it] in checkmarkSignifiers }
-                    .map { sanitizeExerciseName(it) }
-                    .toSet()
-                CheckmarksEntry(
-                    firstName = sanitizeFirstName(entry[firstNameKey]!!),
-                    lastName = entry[lastNameKey]!!,
-                    idNumber = entry[idNumberKey]!!,
-                    checkmarks = checkmarks
-                )
-            }
-        return Pair(exercises, entries)
+            .map { entry -> parseCsvLine(entry) }
+        return ParseResult(exercises, entries)
     }
+}
+
+private fun ParseConfiguration.parseCsvLine(entry: Map<String, String>): StudentCheckmarksEntry {
+    val checkmarks = entry.keys
+        .filterNot { it in setOf(firstNameKey, lastNameKey, idNumberKey) }
+        .filter { entry[it] in checkmarkSignifiers }
+        .map { sanitizeExerciseName(it) }
+        .toSet()
+    return StudentCheckmarksEntry(
+        firstName = sanitizeFirstName(entry[firstNameKey]!!),
+        lastName = entry[lastNameKey]!!,
+        idNumber = entry[idNumberKey]!!,
+        checkmarks = checkmarks
+    )
 }
 
 private fun sanitizeExerciseName(exerciseName: String): String = firstWordOf(exerciseName)
