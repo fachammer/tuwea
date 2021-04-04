@@ -7,7 +7,7 @@ import kotlin.random.Random
 data class CheckmarksEntry(val firstName: String, val lastName: String, val idNumber: String, val checkmarks: Set<String>)
 
 
-data class Configuration(
+data class ParseConfiguration(
     val csvDelimiter: Char,
     val csvLineOffset: Int,
     val preCheckmarksFieldOffset: Int,
@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     }
 
     val file = File(fileName)
-    val configuration = Configuration(
+    val configuration = ParseConfiguration(
         csvDelimiter = ';',
         csvLineOffset = 6,
         preCheckmarksFieldOffset = 3,
@@ -44,14 +44,12 @@ fun main(args: Array<String>) {
     processFile(file, configuration)
 }
 
-private fun processFile(file: File, configuration: Configuration) {
-    configuration.apply {
-        val (exercises, entries) = parseCsvFile(file, this)
-        val chosenAssignments = assignExercises(exercises, entries)
-        println(chosenAssignments.joinToString("\n") {
-            "${it.first}: ${it.second.firstName} ${it.second.lastName}"
-        })
-    }
+private fun processFile(file: File, parseConfiguration: ParseConfiguration) {
+    val (exercises, entries) = parseCsvFile(file, parseConfiguration)
+    val chosenAssignments = assignExercises(exercises, entries)
+    println(chosenAssignments.joinToString("\n") {
+        "${it.first}: ${it.second.firstName} ${it.second.lastName}"
+    })
 }
 
 private fun assignExercises(
@@ -68,8 +66,11 @@ private fun assignExercises(
         }
 }
 
-private fun parseCsvFile(file: File, configuration: Configuration): Pair<List<String>, List<CheckmarksEntry>> {
-    configuration.apply {
+private fun parseCsvFile(
+    file: File,
+    parseConfiguration: ParseConfiguration
+): Pair<List<String>, List<CheckmarksEntry>> {
+    parseConfiguration.apply {
         val csvLines = file.readLines().drop(csvLineOffset)
         val headerRow = csvLines.first()
         val reader = csvReader { delimiter = csvDelimiter }
