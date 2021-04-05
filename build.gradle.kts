@@ -34,3 +34,12 @@ tasks.withType<KotlinCompile> {
 application {
     mainClass.set("dev.achammer.tuwea.MainKt")
 }
+
+distributions {
+    main {
+        contents {
+            from("README.md")
+            from("LICENSE")
+        }
+    }
+}
