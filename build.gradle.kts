@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "dev.achammer"
-version = "0.2-SNAPSHOT"
+version = "0.1.1"
 
 object Libs {
     abstract class Lib(groupId: String, artifactId: String, version: String) {
