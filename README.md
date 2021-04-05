@@ -1,7 +1,6 @@
 # tuwea
 
-*tuwea* stands for TU Wien exercise assistant and is a tool that assists tutors at TU Wien when conducting exercise
-groups
+*tuwea* stands for TU Wien exercise assistant and is a tool that assists tutors at TU Wien when teaching exercise groups
 
 ## features
 
