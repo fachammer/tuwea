@@ -1,4 +1,4 @@
-package dev.achammer.tutor
+package dev.achammer.tuwea
 
 import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
 import java.io.File

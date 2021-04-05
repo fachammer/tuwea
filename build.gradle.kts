@@ -32,5 +32,5 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("dev.achammer.tutor.MainKt")
+    mainClass.set("dev.achammer.tuwea.MainKt")
 }

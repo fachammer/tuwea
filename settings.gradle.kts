@@ -1,3 +1,3 @@
 
-rootProject.name = "tutor"
+rootProject.name = "tuwea"
 
