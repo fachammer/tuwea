@@ -1,8 +1,8 @@
 package dev.achammer.tuwea.browser
 
-import dev.achammer.tuwea.core.ParseConfiguration
 import dev.achammer.tuwea.core.findExerciseAssignment
 import dev.achammer.tuwea.core.parseCsvLines
+import dev.achammer.tuwea.core.tuwelParseConfiguration
 import kotlinx.browser.document
 import kotlinx.dom.clear
 import kotlinx.html.InputType
@@ -37,17 +37,7 @@ fun main() {
                     val reader = FileReader()
                     reader.onload = { it: dynamic ->
                         val contents: String = it.target.result
-                        val configuration = ParseConfiguration(
-                            csvDelimiter = ';',
-                            csvLineOffset = 6,
-                            preCheckmarksFieldOffset = 3,
-                            firstNameKey = "Vorname",
-                            lastNameKey = "Nachname",
-                            idNumberKey = "ID-Nummer",
-                            exerciseEndSignifierKey = "Kreuzerl",
-                            checkmarkSignifiers = setOf("X", "(X)")
-                        )
-                        val parseResult = parseCsvLines(configuration, contents.split("\n"))
+                        val parseResult = parseCsvLines(tuwelParseConfiguration, contents.split("\n"))
                         val exerciseAssignment = findExerciseAssignment(parseResult)
                         dataTable.clear()
                         dataTable.createTHead().append {

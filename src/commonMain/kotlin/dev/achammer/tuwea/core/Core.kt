@@ -20,6 +20,17 @@ data class ParseConfiguration(
     val checkmarkSignifiers: Set<String>
 )
 
+val tuwelParseConfiguration = ParseConfiguration(
+    csvDelimiter = ';',
+    csvLineOffset = 6,
+    preCheckmarksFieldOffset = 3,
+    firstNameKey = "Vorname",
+    lastNameKey = "Nachname",
+    idNumberKey = "ID-Nummer",
+    exerciseEndSignifierKey = "Kreuzerl",
+    checkmarkSignifiers = setOf("X", "(X)")
+)
+
 data class ParseResult(val exercises: List<String>, val studentCheckmarksEntries: List<StudentCheckmarksEntry>)
 typealias ExerciseStudentAssignment = List<Pair<String, StudentCheckmarksEntry>>
 
