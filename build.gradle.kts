@@ -21,6 +21,11 @@ kotlin {
     jvm {
         withJava()
     }
+    js {
+        browser {
+            binaries.executable()
+        }
+    }
     sourceSets {
         val commonMain by getting
         val jvmMain by getting {
@@ -29,17 +34,18 @@ kotlin {
                 implementation(Libs.Slf4jNop.dependencyPath)
             }
         }
+        val jsMain by getting {
+            dependencies {
+                implementation(kotlin("stdlib-js"))
+                implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.6.12")
+            }
+        }
     }
 }
 
 repositories {
     mavenCentral()
     jcenter()
-}
-
-dependencies {
-    implementation(Libs.KotlinCsv.dependencyPath)
-    implementation(Libs.Slf4jNop.dependencyPath)
 }
 
 tasks.withType<KotlinCompile> {
