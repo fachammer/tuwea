@@ -1,7 +1,5 @@
-package dev.achammer.tuwea
+package dev.achammer.tuwea.core
 
-import com.github.doyaaaaaken.kotlincsv.dsl.csvReader
-import java.io.File
 import kotlin.random.Random
 
 data class StudentCheckmarksEntry(
@@ -25,41 +23,7 @@ data class ParseConfiguration(
 data class ParseResult(val exercises: List<String>, val studentCheckmarksEntries: List<StudentCheckmarksEntry>)
 typealias ExerciseStudentAssignment = List<Pair<String, StudentCheckmarksEntry>>
 
-fun main(args: Array<String>) {
-    val fileName = args.firstOrNull()
-    if (fileName == null) {
-        println("Please provide a csv file to parse")
-        return
-    }
-
-    if (!File(fileName).exists()) {
-        println("Please provide a valid file path. $fileName does not point to a valid file")
-    }
-
-    val file = File(fileName)
-    val configuration = ParseConfiguration(
-        csvDelimiter = ';',
-        csvLineOffset = 6,
-        preCheckmarksFieldOffset = 3,
-        firstNameKey = "Vorname",
-        lastNameKey = "Nachname",
-        idNumberKey = "ID-Nummer",
-        exerciseEndSignifierKey = "Kreuzerl",
-        checkmarkSignifiers = setOf("X", "(X)")
-    )
-
-    processFile(file, configuration)
-}
-
-private fun processFile(file: File, parseConfiguration: ParseConfiguration) {
-    val parseResult = parseCsvFile(file, parseConfiguration)
-    val exerciseStudentAssignment = findExerciseAssignment(parseResult)
-    println(exerciseStudentAssignment.joinToString("\n") {
-        "${it.first}: ${it.second.firstName} ${it.second.lastName}"
-    })
-}
-
-private fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAssignment {
+fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAssignment {
     val exercises = parseResult.exercises
     val entries = parseResult.studentCheckmarksEntries
     return exercises
@@ -72,23 +36,19 @@ private fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAss
         }
 }
 
-private fun parseCsvFile(
-    file: File,
-    parseConfiguration: ParseConfiguration
-): ParseResult {
+fun parseCsvLines(parseConfiguration: ParseConfiguration, csvLines: List<String>): ParseResult {
     parseConfiguration.apply {
-        val csvLines = file.readLines().drop(csvLineOffset)
-        val headerRow = csvLines.first()
-        val reader = csvReader { delimiter = csvDelimiter }
-        val exercises = reader
-            .readAll(headerRow)
-            .first()
+        val sanitizedCsvLines = csvLines.drop(csvLineOffset)
+        val headerRow = sanitizedCsvLines.first()
+        val fields = headerRow.split(csvDelimiter)
+        val exercises = fields
             .drop(preCheckmarksFieldOffset)
             .takeWhile { s -> s != exerciseEndSignifierKey }
             .map { sanitizeExerciseName(it) }
 
-        val entries = reader
-            .readAllWithHeader(csvLines.joinToString("\n"))
+        val entries = sanitizedCsvLines
+            .drop(1)
+            .map { line -> fields.zip(line.split(csvDelimiter)).toMap() }
             .map { entry -> parseCsvLine(entry) }
         return ParseResult(exercises, entries)
     }
