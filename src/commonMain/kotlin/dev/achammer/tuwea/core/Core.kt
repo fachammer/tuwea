@@ -47,8 +47,9 @@ fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAssignment 
         }
 }
 
-fun parseCsvLines(parseConfiguration: ParseConfiguration, csvLines: List<String>): ParseResult {
+fun parseCsvContent(parseConfiguration: ParseConfiguration, csvContent: String): ParseResult {
     parseConfiguration.apply {
+        val csvLines = csvContent.split("\n")
         val sanitizedCsvLines = csvLines.drop(csvLineOffset)
         val headerRow = sanitizedCsvLines.first()
         val fields = headerRow.split(csvDelimiter)

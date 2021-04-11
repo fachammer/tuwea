@@ -1,7 +1,7 @@
 package dev.achammer.tuwea.console
 
 import dev.achammer.tuwea.core.findExerciseAssignment
-import dev.achammer.tuwea.core.parseCsvLines
+import dev.achammer.tuwea.core.parseCsvContent
 import dev.achammer.tuwea.core.tuwelParseConfiguration
 import java.io.File
 
@@ -18,7 +18,7 @@ fun main(args: Array<String>) {
     }
 
     val file = File(fileName)
-    val parseResult = parseCsvLines(tuwelParseConfiguration, file.readLines())
+    val parseResult = parseCsvContent(tuwelParseConfiguration, file.readText())
     val exerciseStudentAssignment = findExerciseAssignment(parseResult)
     println(exerciseStudentAssignment.joinToString("\n") {
         "${it.first}: ${it.second.firstName} ${it.second.lastName}"
