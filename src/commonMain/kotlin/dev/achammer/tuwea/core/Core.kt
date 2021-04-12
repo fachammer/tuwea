@@ -34,7 +34,10 @@ val tuwelParseConfiguration = ParseConfiguration(
 data class ParseResult(val exercises: List<String>, val studentCheckmarksEntries: List<StudentCheckmarksEntry>)
 typealias ExerciseStudentAssignment = List<Pair<String, StudentCheckmarksEntry>>
 
-fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAssignment {
+fun findExerciseAssignment(
+    parseResult: ParseResult,
+    isStudentPresent: (StudentCheckmarksEntry) -> Boolean
+): ExerciseStudentAssignment {
     val exercises = parseResult.exercises
     val entries = parseResult.studentCheckmarksEntries
     return exercises
@@ -42,8 +45,13 @@ fun findExerciseAssignment(parseResult: ParseResult): ExerciseStudentAssignment 
         .fold(emptyList()) { chosenAssignments, exercise ->
             val potentialEntries = entries
                 .filter { it.checkmarks.contains(exercise) }
+                .filter { isStudentPresent(it) }
                 .filterNot { entry -> chosenAssignments.firstOrNull { it.second == entry } != null }
-            chosenAssignments + Pair(exercise, potentialEntries[Random.nextInt(potentialEntries.size)])
+            if (potentialEntries.isEmpty()) {
+                chosenAssignments
+            } else {
+                chosenAssignments + Pair(exercise, potentialEntries[Random.nextInt(potentialEntries.size)])
+            }
         }
 }
 

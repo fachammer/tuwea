@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
 
     val file = File(fileName)
     val parseResult = parseCsvContent(tuwelParseConfiguration, file.readText())
-    val exerciseStudentAssignment = findExerciseAssignment(parseResult)
+    val exerciseStudentAssignment = findExerciseAssignment(parseResult) { true }
     println(exerciseStudentAssignment.joinToString("\n") {
         "${it.first}: ${it.second.firstName} ${it.second.lastName}"
     })

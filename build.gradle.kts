@@ -37,7 +37,10 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-js"))
-                implementation("org.jetbrains.kotlinx:kotlinx-html-js:0.6.12")
+                implementation("org.jetbrains:kotlin-react:17.0.1-pre.148-kotlin-1.4.21")
+                implementation("org.jetbrains:kotlin-react-dom:17.0.1-pre.148-kotlin-1.4.21")
+                implementation(npm("react", "17.0.1"))
+                implementation(npm("react-dom", "17.0.1"))
             }
         }
     }

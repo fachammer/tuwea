@@ -1,86 +1,105 @@
 package dev.achammer.tuwea.browser
 
-import dev.achammer.tuwea.core.findExerciseAssignment
-import dev.achammer.tuwea.core.parseCsvContent
-import dev.achammer.tuwea.core.tuwelParseConfiguration
+import dev.achammer.tuwea.core.*
 import kotlinx.browser.document
-import kotlinx.dom.clear
 import kotlinx.html.InputType
-import kotlinx.html.dom.append
-import kotlinx.html.js.*
-import org.w3c.dom.get
+import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
+import org.w3c.files.Blob
 import org.w3c.files.FileReader
+import react.RProps
+import react.child
+import react.dom.*
+import react.functionalComponent
+import react.useState
 
-fun main() {
-    document.getElementById("app")
-        ?.also { it.innerHTML = "" }
-        ?.append {
-            h1 { +"tuwea" }
-            val assignmentTable = table {
-                thead {
-                    tr {
-                        th {
-                            +"exercise"
-                        }
-                        th {
-                            +"name"
-                        }
-                    }
-                }
-                tbody {
+val app = functionalComponent<RProps> {
+    val (parseResult, setParseResult) = useState<ParseResult?>(null)
+    val (presentSet, setPresentSet) = useState<Set<StudentCheckmarksEntry>>(emptySet())
+    val isStudentPresent = { student: StudentCheckmarksEntry -> presentSet.contains(student) }
+    h1 {
+        +"tuwea"
+    }
+
+    if (parseResult != null) {
+        val exerciseStudentAssignment = findExerciseAssignment(parseResult) { isStudentPresent(it) }
+        table {
+            thead {
+                tr {
+                    th { +"exercise" }
+                    th { +"student" }
                 }
             }
-            val dataTable = table {}
-            input(type = InputType.file) {
-                onChangeFunction = { event: dynamic ->
-                    val file = event.target?.files[0]
-                    val reader = FileReader()
-                    reader.onload = { it: dynamic ->
-                        val content: String = it.target.result
-                        val parseResult = parseCsvContent(tuwelParseConfiguration, content)
-                        val exerciseAssignment = findExerciseAssignment(parseResult)
-                        dataTable.clear()
-                        dataTable.createTHead().append {
-                            tr {
-                                th { +"name" }
-                                parseResult.exercises.forEach {
-                                    th { +it }
-                                }
-                            }
-                        }
-                        dataTable.createTBody().append {
-                            parseResult.studentCheckmarksEntries.forEach {
-                                tr {
-                                    td { +"${it.firstName} ${it.lastName}" }
-                                    parseResult.exercises.forEach { exercise ->
-                                        td {
-                                            if (it.checkmarks.contains(exercise)) {
-                                                +"X"
-                                            } else {
-                                                +""
-                                            }
+            tbody {
+                exerciseStudentAssignment.forEach { (exercise, student) ->
+                    tr {
+                        td { +exercise }
+                        td { +"${student.firstName} ${student.lastName}" }
+                    }
+                }
+            }
+        }
+        table {
+            thead {
+                tr {
+                    th { +"name" }
+                    th { +"present" }
+                    parseResult.exercises.forEach { exercise ->
+                        th { +exercise }
+                    }
+                }
+            }
+            tbody {
+                parseResult.studentCheckmarksEntries.forEach { studentCheckmarksEntry ->
+                    tr {
+                        td { +"${studentCheckmarksEntry.firstName} ${studentCheckmarksEntry.lastName}" }
+                        td {
+                            input(type = InputType.checkBox) {
+                                attrs {
+                                    id = studentCheckmarksEntry.idNumber
+                                    checked = isStudentPresent(studentCheckmarksEntry)
+                                    onChangeFunction = { event: dynamic ->
+                                        if (isStudentPresent(studentCheckmarksEntry)) {
+                                            setPresentSet(presentSet - studentCheckmarksEntry)
+                                        } else {
+                                            setPresentSet(presentSet + studentCheckmarksEntry)
                                         }
                                     }
                                 }
                             }
                         }
-                        assignmentTable.tBodies[0]?.clear()
-                        exerciseAssignment.forEach {
-                            assignmentTable.tBodies[0]?.append {
-                                tr {
-                                    td {
-                                        +it.first
-                                    }
-                                    td {
-                                        +"${it.second.firstName} ${it.second.lastName}"
-                                    }
+                        parseResult.exercises.forEach { exercise ->
+                            td {
+                                if (studentCheckmarksEntry.checkmarks.contains(exercise)) {
+                                    +"X"
+                                } else {
+                                    +""
                                 }
                             }
                         }
                     }
-                    reader.readAsText(file)
                 }
             }
-
         }
+    }
+
+    input(type = InputType.file) {
+        attrs {
+            onChangeFunction = { event: dynamic ->
+                val file = event.target?.files[0] as Blob
+                val reader = FileReader()
+                reader.onload = { it: dynamic ->
+                    val content = it.target.result as String
+                    setParseResult(parseCsvContent(tuwelParseConfiguration, content))
+                }
+                reader.readAsText(file)
+            }
+        }
+    }
+}
+
+fun main() {
+    render(document.getElementById("app")) {
+        child(app)
+    }
 }
