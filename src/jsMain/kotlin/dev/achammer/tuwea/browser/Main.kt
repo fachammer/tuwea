@@ -5,6 +5,7 @@ import kotlinx.browser.document
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
+import kotlinx.html.js.onClickFunction
 import org.w3c.files.Blob
 import org.w3c.files.FileReader
 import react.RProps
@@ -16,29 +17,13 @@ import react.useState
 val app = functionalComponent<RProps> {
     val (parseResult, setParseResult) = useState<ParseResult?>(null)
     val (presentSet, setPresentSet) = useState<Set<StudentCheckmarksEntry>>(emptySet())
+    val (exerciseStudentAssignment, setExerciseStudentAssignment) = useState<ExerciseStudentAssignment?>(null)
     val isStudentPresent = { student: StudentCheckmarksEntry -> presentSet.contains(student) }
     h1 {
         +"tuwea"
     }
 
     if (parseResult != null) {
-        val exerciseStudentAssignment = findExerciseAssignment(parseResult) { isStudentPresent(it) }
-        table {
-            thead {
-                tr {
-                    th { +"exercise" }
-                    th { +"student" }
-                }
-            }
-            tbody {
-                exerciseStudentAssignment.forEach { (exercise, student) ->
-                    tr {
-                        td { +exercise }
-                        td { +"${student.firstName} ${student.lastName}" }
-                    }
-                }
-            }
-        }
         table {
             thead {
                 tr {
@@ -81,6 +66,31 @@ val app = functionalComponent<RProps> {
                 }
             }
         }
+
+        button {
+            attrs {
+                onClickFunction = {
+                    setExerciseStudentAssignment(findExerciseAssignment(parseResult) { isStudentPresent(it) })
+                }
+            }
+            +"assign exercises"
+        }
+
+        br {}
+
+        if (exerciseStudentAssignment != null) {
+            textArea {
+                attrs {
+                    rows = parseResult.exercises.size.toString()
+                    disabled = true
+                    value = exerciseStudentAssignment.joinToString("\n") {
+                        "${it.first}: ${it.second.firstName} ${it.second.lastName}"
+                    }
+                }
+            }
+        }
+
+        br {}
     }
 
     input(type = InputType.file) {
