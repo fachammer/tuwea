@@ -53,7 +53,7 @@ val app = functionalComponent<RProps> {
                             input(type = InputType.checkBox) {
                                 attrs {
                                     checked = isStudentPresent(studentCheckmarksEntry)
-                                    onChangeFunction = { event: dynamic ->
+                                    onChangeFunction = {
                                         if (isStudentPresent(studentCheckmarksEntry)) {
                                             setPresentSet(presentSet - studentCheckmarksEntry)
                                         } else {
