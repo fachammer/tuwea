@@ -19,97 +19,99 @@ import styled.styledTd
 import styled.styledTr
 
 val app = functionalComponent<RProps> {
-    val (parseResult, setParseResult) = useState<ParseResult?>(null)
-    val (presentSet, setPresentSet) = useState<Set<StudentCheckmarksEntry>>(emptySet())
-    val (exerciseStudentAssignment, setExerciseStudentAssignment) = useState<ExerciseStudentAssignment?>(null)
-    val isStudentPresent = { student: StudentCheckmarksEntry -> presentSet.contains(student) }
+    val (database, setDatabase) = useState(Database(emptySet()))
+    val (presentSet, setPresentSet) = useState<Set<Student>>(emptySet())
+    val (exerciseStudentAssignment, setExerciseStudentAssignment) = useState<List<Pair<Exercise, Student>>?>(null)
+    val isStudentPresent = { student: Student -> presentSet.contains(student) }
+
+    val exercises = database.exercises
+
     h1 {
         +"tuwea"
     }
 
-    if (parseResult != null) {
-        table {
-            thead {
-                tr {
-                    th { +"name" }
-                    th { +"present" }
-                    parseResult.exercises.forEach { exercise ->
-                        th { +exercise }
-                    }
+    table {
+        thead {
+            tr {
+                th { +"name" }
+                th { +"present" }
+                exercises.forEach { e ->
+                    th { +e.name }
                 }
             }
-            tbody {
-                parseResult.studentCheckmarksEntries.forEach { studentCheckmarksEntry ->
-                    styledTr {
-                        css {
-                            if (exerciseStudentAssignment != null &&
-                                exerciseStudentAssignment.any { it.second == studentCheckmarksEntry }
-                            ) {
-                                backgroundColor = Color.lightGray
-                            }
+        }
+        tbody {
+            database.facts.checkmarkMap().map { entry ->
+                val student = entry.key
+                styledTr {
+                    css {
+                        if (exerciseStudentAssignment != null &&
+                            exerciseStudentAssignment.any { it.second == student }
+                        ) {
+                            backgroundColor = Color.lightGray
                         }
-                        td { +"${studentCheckmarksEntry.firstName} ${studentCheckmarksEntry.lastName}" }
-                        td {
-                            input(type = InputType.checkBox) {
-                                attrs {
-                                    checked = isStudentPresent(studentCheckmarksEntry)
-                                    onChangeFunction = {
-                                        if (isStudentPresent(studentCheckmarksEntry)) {
-                                            setPresentSet(presentSet - studentCheckmarksEntry)
-                                        } else {
-                                            setPresentSet(presentSet + studentCheckmarksEntry)
-                                        }
+                    }
+                    td { +"${student.firstName} ${student.lastName}" }
+                    td {
+                        input(type = InputType.checkBox) {
+                            attrs {
+                                checked = isStudentPresent(student)
+                                onChangeFunction = {
+                                    if (isStudentPresent(student)) {
+                                        setPresentSet(presentSet - student)
+                                    } else {
+                                        setPresentSet(presentSet + student)
                                     }
                                 }
                             }
                         }
-                        parseResult.exercises.forEach { exercise ->
-                            styledTd {
-                                css {
-                                    if (exerciseStudentAssignment != null
-                                        && exerciseStudentAssignment.any { it.first == exercise && it.second == studentCheckmarksEntry }
-                                    ) {
-                                        backgroundColor = Color.red
-                                    }
+                    }
+                    exercises.forEach { exercise ->
+                        styledTd {
+                            css {
+                                if (exerciseStudentAssignment != null
+                                    && exerciseStudentAssignment.any { it.first == exercise && it.second == student }
+                                ) {
+                                    backgroundColor = Color.red
                                 }
+                            }
 
-                                if (studentCheckmarksEntry.checkmarks.contains(exercise)) {
-                                    +"X"
-                                } else {
-                                    +""
-                                }
+                            if (entry.value[exercise]!!.solved) {
+                                +"X"
+                            } else {
+                                +""
                             }
                         }
                     }
                 }
             }
         }
-
-        button {
-            attrs {
-                onClickFunction = {
-                    setExerciseStudentAssignment(findExerciseAssignment(parseResult) { isStudentPresent(it) })
-                }
-            }
-            +"assign exercises"
-        }
-
-        br {}
-
-        if (exerciseStudentAssignment != null) {
-            textArea {
-                attrs {
-                    rows = parseResult.exercises.size.toString()
-                    disabled = true
-                    value = exerciseStudentAssignment.joinToString("\n") {
-                        "${it.first}: ${it.second.firstName} ${it.second.lastName}"
-                    }
-                }
-            }
-        }
-
-        br {}
     }
+
+    button {
+        attrs {
+            onClickFunction = {
+                setExerciseStudentAssignment(findRandomExerciseAssignment(database) { isStudentPresent(it) })
+            }
+        }
+        +"assign exercises"
+    }
+
+    br {}
+
+    if (exerciseStudentAssignment != null) {
+        textArea {
+            attrs {
+                rows = database.exercises.size.toString()
+                disabled = true
+                value = exerciseStudentAssignment.joinToString("\n") {
+                    "${it.first}: ${it.second.firstName} ${it.second.lastName}"
+                }
+            }
+        }
+    }
+
+    br {}
 
     input(type = InputType.file) {
         attrs {
@@ -118,7 +120,8 @@ val app = functionalComponent<RProps> {
                 val reader = FileReader()
                 reader.onload = { it: dynamic ->
                     val content = it.target.result as String
-                    setParseResult(parseCsvContent(tuwelParseConfiguration, content))
+                    val parseResult = parseCsvContent(tuwelParseConfiguration, content)
+                    setDatabase(importParseResult(database, parseResult))
                     setExerciseStudentAssignment(null)
                     setPresentSet(emptySet())
                 }

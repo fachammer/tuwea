@@ -25,6 +25,9 @@ kotlin {
     }
     sourceSets {
         val commonMain by getting
+        all {
+            languageSettings.enableLanguageFeature("InlineClasses")
+        }
     }
 }
 
